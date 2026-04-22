@@ -1,0 +1,20 @@
+# R / RStudio
+.Rhistory
+.RData
+.Rproj.user/
+
+# Large objects
+*.RData
+*.rds
+*.rda
+
+# Outputs (keep folder, ignore contents)
+outputs/fits/*
+outputs/figures/*
+
+# raw Excel files ( sensitive \)
+data/raw/*.xlsx
+
+# System files
+.DS_Store
+Thumbs.db

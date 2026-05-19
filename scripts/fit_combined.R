@@ -32,7 +32,7 @@ textstring <- "
 model {
 
   # ---- Wastewater observation parameters ----
-  mu <- 0.143
+  mu <- mu_fixed
 
   log_mult ~ dnorm(log(3e-9), 2.5) T(log(1e-9), log(1e-8))
   mult <- exp(log_mult)
@@ -749,6 +749,7 @@ data_list_combined <- list(
   mu_v = mu_v,
   va_delay = 14,
   vb_delay = 14,
+  mu_fixed =0.143,
   
   # shedding inputs
   tau = tau,
@@ -843,10 +844,10 @@ system.time({
 })
 
 # convert to mcmc.list for downstream diagnostics and plotting
-combined_fit <- as.mcmc.list(combined_fit)
+combined_fit_base <- as.mcmc.list(combined_fit)
 
 # save fitted chains
-save(combined_fit, file = file.path("outputs", "fits", "combined_fit.RData"))
+save(combined_fit_base, file = file.path("outputs", "fits", "combined_fit_base.RData"))
 
 
 

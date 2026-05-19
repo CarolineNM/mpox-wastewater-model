@@ -25,6 +25,7 @@ out_dir   <- file.path("outputs", "fits")
 case_dat <- read_excel(data_file, sheet = "cases")
 cov_dat  <- read_excel(data_file, sheet = "Mergeddat")
 ww_dat   <- read_excel(data_file, sheet = "dailyWW")
+ww_flow  <- read_excel(data_file, sheet=  "flowrate")
 
 # ---- Model setup ----
 
@@ -132,10 +133,10 @@ model {
 
   # Initial conditions for each group
  for (g in 1:3) {
-    E_start[g] <- E0 * Norm_contact_dy[g]
-    P_start[g] <- P0 * Norm_contact_dy[g]
-    A1_start[g] <- A10 * Norm_contact_dy[g]
-    I1_start[g] <- I10 * Norm_contact_dy[g]
+    E_start[g] <- E0 * norm_contact_dy[g]
+    P_start[g] <- P0 * norm_contact_dy[g]
+    A1_start[g] <- A10 * norm_contact_dy[g]
+    I1_start[g] <- I10 * norm_contact_dy[g]
     E[g,1]<-E_start[g]
     P[g, 1] <- P_start[g]
     A1[g, 1] <- A1_start[g]
@@ -692,6 +693,12 @@ flow_L_daily <- as.numeric(unlist(flow_L_daily))
 # convert flow from litres to millilitres
 flow_mL_daily <- flow_L_daily * 1e3
 
+#WW all observation days
+
+flow_all<-ww_flow %>%select(sumflow)
+flow_alldaily<-as.numeric(unlist(flow_all))
+flow_mlalldaily<-flow_alldaily*1e3
+
 
 # ---- Wastewater sampling days ----
 # observation days are recorded relative to the observation period,
@@ -775,6 +782,7 @@ data_list_combined <- list(
   
   # wastewater model inputs
   flow_mL_daily = flow_mL_daily,
+  flow_mlalldaily=flow_mlalldaily,
   wwtp_population = 1278020,
   ww_sample_days = ww_sample_days,
   tmax = 15,
@@ -816,7 +824,7 @@ inits_list <- list(
 system.time({
   combined_fit <- run.jags(
     textstring,
-    data = dataListcomb,
+    data = data_list_combined,
     monitor = c(
       "ww_pred", "cases_pred", "log10_conc_all",
       "cases_pred_g", "mu_nb_g",

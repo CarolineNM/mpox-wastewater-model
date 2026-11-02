@@ -864,7 +864,7 @@ system.time({
 combined_fit_base <- as.mcmc.list(combined_fit)
 
 # save fitted chains
-save(combined_fit_base, file = file.path("outputs", "fits", "combined_fit_base.RData"))
+save(combined_fit_base, file = file.path("outputs", "fits", "combined_fit_refit.RData"))
 
 
 

@@ -788,7 +788,7 @@ system.time({
 case_fit <- as.mcmc.list(case_fit)
 
 # save fitted chains
-save(case_fit, file = file.path("outputs", "fits", "case_fit.RData"))
+save(case_fit, file = file.path("outputs", "fits", "case_fit_refit.RData"))
 
 
 

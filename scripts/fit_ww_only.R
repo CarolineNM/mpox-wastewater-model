@@ -800,7 +800,7 @@ system.time({
 ww_fit <- as.mcmc.list(ww_fit)
 
 # save fitted chains
-save(ww_fit, file = file.path("outputs", "fits", "ww_fit.RData"))
+save(ww_fit, file = file.path("outputs", "fits", "ww_fit_refit.RData"))
 
 
 

@@ -34,7 +34,7 @@ model {
   # ---- Wastewater observation parameters ----
   mu <- 0.143
 
-  log_mult ~ dnorm(log(3e-9), 2.5) T(log(1e-9), log(1e-8))
+  log_mult ~ dnorm(log(1.5e-4), 0.05) T(log(1e-8), log(1e0))
   mult <- exp(log_mult)
 
   tau_ww ~ dgamma(40, 48)
@@ -603,9 +603,18 @@ mu_v <- c(rep(0, burn_in_timesteps), v2)
 # ---- Shedding parameters ----
 tau <- 0.776
 
-shed.I1 <- 10^12.3
-shed.I2 <- 10^11.5
-shed.I3 <- 10^10.2
+# Stage-specific shedding, log10 copies per mL of viral transport media,
+# read from Suner et al. 2023 figure 3A (median viral load by time from
+# symptom onset) for lesion and rectal swabs at the bins 1-7, 8-14 and 15-21
+# days, which correspond to stages I1, I2 and I3. The two sites are summed on
+# the LINEAR scale. Derivation in scripts/derive_shedding_rates.R.
+#
+# These are transport-media concentrations and cannot be converted to copies
+# per person per day, so the absolute scale is not identifiable here and is
+# carried by mult.
+shed.I1 <- 10^7.303
+shed.I2 <- 10^6.583
+shed.I3 <- 10^3.785
 
 shed.I1a <- shed.I1
 shed.I2a <- shed.I2
@@ -739,7 +748,7 @@ inits_list <- list(
     beta = 0.8,
     kappa = 0.95,
     report_frac = 0.50,
-    log_mult = log(3.5e-9),
+    log_mult = log(1e-4),
     tau_ww = 0.4,
     transit_time_mean = 2.5,
     transit_time_cv = 0.3,
@@ -750,7 +759,7 @@ inits_list <- list(
     beta = 0.9,
     kappa = 0.92,
     report_frac = 0.55,
-    log_mult = log(2.5e-9),
+    log_mult = log(1e-3),
     tau_ww = 0.5,
     transit_time_mean = 2.8,
     transit_time_cv = 0.35,

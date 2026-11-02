@@ -160,7 +160,7 @@ model {
     I2va[g, 1] <- I2va_start[g]
     I3va[g, 1] <- I3va_start[g]
     
-      Inits for vaccinated comps vb
+      #Inits for vaccinated comps vb
     Vb[g,1]<-Vb_start[g]
     Evb[g,1]<-Evb_start[g]
     Pvb[g, 1] <- Pvb_start[g]

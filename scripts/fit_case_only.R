@@ -133,10 +133,10 @@ model {
   
   # Initial conditions for each group
  for (g in 1:3) {
-    E_start[g] <- E0 * Norm_contact_dy[g]
-    P_start[g] <- P0 * Norm_contact_dy[g]
-    A1_start[g] <- A10 * Norm_contact_dy[g]
-    I1_start[g] <- I10 * Norm_contact_dy[g]
+    E_start[g] <- E0 * norm_contact_dy[g]
+    P_start[g] <- P0 * norm_contact_dy[g]
+    A1_start[g] <- A10 * norm_contact_dy[g]
+    I1_start[g] <- I10 * norm_contact_dy[g]
     E[g,1]<-E_start[g]
     P[g, 1] <- P_start[g]
     A1[g, 1] <- A1_start[g]

@@ -4,18 +4,36 @@
 # Purpose: pull the quantities needed from a fitted model into small files that
 #          can be moved off the tower, instead of transferring the full
 #          multi-gigabyte .RData objects.
-
+#
+# This is a SEPARATE script. Do not paste it into the fitting scripts. Run it
+# after a fit has finished and been saved.
+#
+# It writes two files per fit:
+#
+#   <name>_scalar_summary.csv   a few kB  - posterior median and 95% CrI for
+#                                           every scalar parameter
+#   <name>_key_draws.rds        ~10-30 MB - thinned draws of the scalars and of
+#                                           the series needed for the response
+#                                           and for recomputing the factors
+#
+# To use: set the two values below, then run the whole script from the project
+# root. Repeat for each of the three fits.
+#
 ###############################################################################
 
-args <- commandArgs(trailingOnly = TRUE)
+# ---- which fit to extract --------------------------------------------------
+# Edit these two lines and run the script again for each fit.
+#
+#   "combined_fit_refit.RData"  with prefix "combined"
+#   "ww_fit_refit.RData"        with prefix "ww"
+#   "case_fit_refit.RData"      with prefix "case"
 
-if (length(args) < 2) {
-  stop("Usage: Rscript extract_refit_summary.R <fit file> <output prefix>",
-       call. = FALSE)
-}
+fit_filename <- "combined_fit_refit.RData"
+prefix       <- "combined"
 
-fit_file <- file.path("outputs", "fits", args[1])
-prefix   <- args[2]
+# ----------------------------------------------------------------------------
+
+fit_file <- file.path("outputs", "fits", fit_filename)
 out_dir  <- file.path("outputs", "summaries")
 
 # keep every KEEP_EVERY-th draw in the saved draws object; the summaries below

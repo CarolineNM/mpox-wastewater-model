@@ -1,6 +1,6 @@
 # ==================================================
-# Script: 05_make_manuscript_figures.R
-# Purpose: Generate manuscript figures from fitted models
+# Script: shedding_impact.R
+# Purpose: Summaries for the reduced vaccinated shedding sensitivity analysis
 # Project: Mpox_clean
 # Updated: 2026-04-22
 # ==================================================

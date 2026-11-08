@@ -1,6 +1,6 @@
 # ==================================================
-# Script: 04_run_counterfactuals.R
-# Purpose: Run counterfactual scenario analyses
+# Script: Sens_run_counterfactuals.R
+# Purpose: Counterfactual scenario analyses for the sensitivity fits
 # Project: Mpox_clean
 # Updated: 2026-04-22
 # ==================================================

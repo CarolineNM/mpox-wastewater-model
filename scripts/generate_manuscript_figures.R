@@ -17,6 +17,7 @@ library(ggridges)
 library(patchwork)
 library(scales)
 library(ggpubr)
+library(truncnorm)
 
 options(scipen = 999)
 
@@ -41,25 +42,18 @@ ww_obs <- as.numeric(unlist(ww_std$log10_cp_per_person_per_day))
 
 
 # ---- Load fitted model outputs ----
-load(file.path("outputs", "fits", "combined_fit.RData"))
-load(file.path("outputs", "fits", "case_fit.RData"))
-load(file.path("outputs", "fits", "ww_fit.RData"))
-load(file.path("outputs", "fits", "case_fit_fig2.RData"))
-load(file.path("outputs", "fits", "ww_fit_fig2.RData"))
-load(file.path("outputs", "fits", "combined_fit_fig2.RData"))
+# Refit version: every section reads the refitted key draws below. No .RData
+# fits are loaded.
 
 # ==================================================
 # Generate model summaries
 # ==================================================
-
-# Convert posterior samples to matrices
-mcmc_matrixallWW  <- as.matrix(Combined_WWtestfnovurb)
-mcmc_matrixallcas <- as.matrix(Combined_castestfnovurb)
-mcmc_matrixallcom <- as.matrix(Combined_finaltestfbnovurbb)
+# Refitted draws, already matrices
+mcmc_matrixallWW <- readRDS(file.path("outputs", "summaries", "refitted_ww_key_draws.rds"))
+mcmc_matrixallcas <- readRDS(file.path("outputs", "summaries", "refitted_case_key_draws.rds"))
+mcmc_matrixallcom <- readRDS(file.path("outputs", "summaries", "refitted_combined_key_draws.rds"))
 
 # E0 = 8 (3–14); P0 = 2 (0–5); A10 = 1 (0–3); I10 = 2 (0–6)
-
-
 # ---- Posterior summary function ----
 # Computes median and 95% credible interval
 summary_median_CI <- function(samples) {
@@ -82,7 +76,6 @@ posterior_summaryww  <- summary_median_CI(mcmc_matrixallWW)
 # ==================================================
 # Extract model-specific summaries
 # ==================================================
-
 # ---- Case-only model ----
 total_cas_summary      <- as.data.frame(posterior_summarycas[grep("cases_pred", rownames(posterior_summarycas)), ])
 total_casb_summary     <- as.data.frame(posterior_summarycas[grep("mu_nb", rownames(posterior_summarycas)), ])
@@ -387,7 +380,7 @@ figures1 <- (top_rowb / bottom_rowb) +
   theme(legend.position = "bottom")
 
 ggsave(
-  filename = "outputs/figures/revfigures1.pdf",
+  filename = "outputs/figures/refit_revfigures1.pdf",
   plot = mainfigure1,
   width = 12,       
   height = 7,      
@@ -396,7 +389,7 @@ ggsave(
 )
 #supp figure#
 ggsave(
-  filename = "outputs/figures/revsuppfigures1.pdf",
+  filename = "outputs/figures/refit_revsuppfigures1.pdf",
   plot = figures1,
   width = 12,       
   height = 7,      
@@ -405,7 +398,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "outputs/figures/suppfigure1.tiff",
+  filename = "outputs/figures/refit_suppfigure1.tiff",
   plot = figures1,  # use your actual plot variable here
   width = 12,
   height = 7,
@@ -416,7 +409,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "outputs/figures/revfigures1.tiff",
+  filename = "outputs/figures/refit_revfigures1.tiff",
   plot = mainfigure1,  # use your actual plot variable here
   width = 12,
   height = 7,
@@ -428,9 +421,9 @@ ggsave(
 
 #main figure 2#
 #for these we use the fig2 fits with tigher Crs#
-mcmc_matrixallWWfig2<-as.matrix(Combined_WWd)
-mcmc_matrixallcasfig2<-as.matrix(Combined_casd) ###most recent version
-mcmc_matrixallcomfig2<-as.matrix(Comblist_finalg)
+mcmc_matrixallWWfig2  <- readRDS(file.path("outputs", "summaries", "refitted_ww_key_draws.rds"))
+mcmc_matrixallcasfig2 <- readRDS(file.path("outputs", "summaries", "refitted_case_key_draws.rds"))
+mcmc_matrixallcomfig2 <- readRDS(file.path("outputs", "summaries", "refitted_combined_key_draws.rds"))
 
 # Function to compute the median and 95% credible interval
 summary_median_CI <- function(samples) {
@@ -504,7 +497,7 @@ plot_prev_all <- ggplot(plot_allprev, aes(x = Date, y = median_fit, color = mode
   geom_line(size = 1.1) +
   labs(
     x = "Date",
-    y = "Prevalence(Estimated infected population)",
+    y = "Prevalence (Estimated Infected Population)",
   ) +
   theme_minimal(base_size = 14) +
   scale_color_manual(values = c("WW-only" = "blue", "Case-only" = "darkgreen", "Combined" = "Orange")) +
@@ -576,7 +569,7 @@ mainfigure2 <- plot_prev_all+plot_Cuminc_all +
   theme(legend.position = "bottom")
 
 ggsave(
-  filename = "outputs/figures/mainfigure2b.pdf",
+  filename = "outputs/figures/refit_mainfigure2b.pdf",
   plot = mainfigure2,
   width = 12,       # adjust width for your manuscript column/page size
   height = 7,      # adjust height accordingly
@@ -585,7 +578,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "outputs/figures/mainfigure2b.pdf",
+  filename = "outputs/figures/refit_mainfigure2b.pdf",
   plot = mainfigure2,
   width = 12,       # adjust width for your manuscript column/page size
   height = 7,      # adjust height accordingly
@@ -594,7 +587,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "outputs/figures/mainfigure2b.tiff",
+  filename = "outputs/figures/refit_mainfigure2b.tiff",
   plot = mainfigure2,  # use your actual plot variable here
   width = 12,
   height = 7,
@@ -694,7 +687,28 @@ cat("Posterior probability that combined < case-only:",
 
 
 #main figure 3b#
-mcmc_matrixallcom <- as.matrix(Combined_finaltestfbnovurbb)
+# Refit version: mcmc_matrixallcom already holds the refitted combined draws
+# from the top of the script.
+
+# Panel B needs log10_conc_all_g and mu_nb_g, which are not in the key draws.
+# They come from a separate file written by extract_extra_series.R. If it is
+# not there yet, panel B is skipped and the rest of the script carries on.
+extra_file_com  <- file.path("outputs", "summaries", "refitted_combined_extra_draws.rds")
+extra_available <- file.exists(extra_file_com)
+
+if (extra_available) {
+  extra_com <- readRDS(extra_file_com)
+  if (nrow(extra_com) != nrow(mcmc_matrixallcom)) {
+    stop("refitted_combined_extra_draws.rds has ", nrow(extra_com),
+         " draws but the key draws have ", nrow(mcmc_matrixallcom),
+         ". They must be thinned identically to be combined.")
+  }
+  mcmc_matrixallcom <- cbind(mcmc_matrixallcom, extra_com)
+} else {
+  message("NOTE: ", extra_file_com, " not found. ",
+          "Figure 3 panel B (sliding correlation) is skipped; ",
+          "figure 3 is saved without it.")
+}
 
 summary_median_CI <- function(samples) {
   med <- apply(samples, 2, median)
@@ -781,19 +795,21 @@ plot_sliding_corr_by_group <- function(mcmc_matrix, posterior_summary, groups = 
 }
 
 # Usage:
-all_summary_df <- plot_sliding_corr_by_group(mcmc_matrixallcom, posterior_summarycom)
+if (extra_available) {
+  all_summary_df <- plot_sliding_corr_by_group(mcmc_matrixallcom, posterior_summarycom)
+}
 
-shedP_1 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_P\\[1,", varnames(Combined_finaltestfbnovurbb))])
-shedP_2 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_P\\[2,", varnames(Combined_finaltestfbnovurbb))])
-shedP_3 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_P\\[3,", varnames(Combined_finaltestfbnovurbb))])
+shedP_1 <- mcmc_matrixallcom[, grep("shed_P\\[1,", colnames(mcmc_matrixallcom))]
+shedP_2 <- mcmc_matrixallcom[, grep("shed_P\\[2,", colnames(mcmc_matrixallcom))]
+shedP_3 <- mcmc_matrixallcom[, grep("shed_P\\[3,", colnames(mcmc_matrixallcom))]
 
-shedA_1 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_A\\[1,", varnames(Combined_finaltestfbnovurbb))])
-shedA_2 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_A\\[2,", varnames(Combined_finaltestfbnovurbb))])
-shedA_3 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_A\\[3,", varnames(Combined_finaltestfbnovurbb))])
+shedA_1 <- mcmc_matrixallcom[, grep("shed_A\\[1,", colnames(mcmc_matrixallcom))]
+shedA_2 <- mcmc_matrixallcom[, grep("shed_A\\[2,", colnames(mcmc_matrixallcom))]
+shedA_3 <- mcmc_matrixallcom[, grep("shed_A\\[3,", colnames(mcmc_matrixallcom))]
 
-shedI_1 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_I\\[1,", varnames(Combined_finaltestfbnovurbb))])
-shedI_2 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_I\\[2,", varnames(Combined_finaltestfbnovurbb))])
-shedI_3 <- as.matrix(Combined_finaltestfbnovurbb[, grep("shed_I\\[3,", varnames(Combined_finaltestfbnovurbb))])
+shedI_1 <- mcmc_matrixallcom[, grep("shed_I\\[1,", colnames(mcmc_matrixallcom))]
+shedI_2 <- mcmc_matrixallcom[, grep("shed_I\\[2,", colnames(mcmc_matrixallcom))]
+shedI_3 <- mcmc_matrixallcom[, grep("shed_I\\[3,", colnames(mcmc_matrixallcom))]
 
 
 # Total shedding for each group (denominator)
@@ -852,17 +868,17 @@ plotshed=ggplot(relg_all, aes(x = Date, y = median, fill = group, color = group)
 plotshed
 
 #We now do the same for the total number of infected individuals
-P1_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("P_total\\[1,", varnames(Combined_finaltestfbnovurbb))])
-P2_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("P_total\\[2,", varnames(Combined_finaltestfbnovurbb))])
-P3_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("P_total\\[3,", varnames(Combined_finaltestfbnovurbb))])
+P1_total <- mcmc_matrixallcom[, grep("P_total\\[1,", colnames(mcmc_matrixallcom))]
+P2_total <- mcmc_matrixallcom[, grep("P_total\\[2,", colnames(mcmc_matrixallcom))]
+P3_total <- mcmc_matrixallcom[, grep("P_total\\[3,", colnames(mcmc_matrixallcom))]
 
-A1_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("A_total\\[1,", varnames(Combined_finaltestfbnovurbb))])
-A2_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("A_total\\[2,", varnames(Combined_finaltestfbnovurbb))])
-A3_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("A_total\\[3,", varnames(Combined_finaltestfbnovurbb))])
+A1_total <- mcmc_matrixallcom[, grep("A_total\\[1,", colnames(mcmc_matrixallcom))]
+A2_total <- mcmc_matrixallcom[, grep("A_total\\[2,", colnames(mcmc_matrixallcom))]
+A3_total <- mcmc_matrixallcom[, grep("A_total\\[3,", colnames(mcmc_matrixallcom))]
 
-I1_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("I_total\\[1,", varnames(Combined_finaltestfbnovurbb))])
-I2_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("I_total\\[2,", varnames(Combined_finaltestfbnovurbb))])
-I3_total <- as.matrix(Combined_finaltestfbnovurbb[, grep("I_total\\[3,", varnames(Combined_finaltestfbnovurbb))])
+I1_total <- mcmc_matrixallcom[, grep("I_total\\[1,", colnames(mcmc_matrixallcom))]
+I2_total <- mcmc_matrixallcom[, grep("I_total\\[2,", colnames(mcmc_matrixallcom))]
+I3_total <- mcmc_matrixallcom[, grep("I_total\\[3,", colnames(mcmc_matrixallcom))]
 
 
 # Sum across compartments per group
@@ -910,6 +926,28 @@ custom_themeb <- theme_minimal(base_size = 16) +
     axis.text = element_text(size = 16, colour = "black")
   )
 
+custom_themec <- theme_minimal(base_size = 16) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5, colour = "black"),
+    
+    axis.title = element_text(size = 16, face = "bold", colour = "black"),
+    axis.text  = element_text(size = 14, colour = "black"),
+    
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    legend.box = "horizontal",
+    
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text  = element_text(size = 14),
+    
+    legend.margin = margin(t = 10, b = 5),
+    legend.box.margin = margin(t = 10),
+    legend.spacing.x = unit(0.6, "cm"),
+    
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(colour = "grey85")
+  )
+
 custom_theme <- theme_minimal(base_size = 16) +
   theme(
     legend.position = "bottom",
@@ -952,7 +990,7 @@ plot_epi <- ggplot(infected_df, aes(x = Date, y = median, color = group, fill = 
   labs(
     #title = "Number of infectious individuals by sexual activity group",
     x = "Date",
-    y = "Estimated umber of infectious individuals"
+    y = "Estimated number of infectious individuals"
   ) +
   scale_color_manual(values = group_colors, name = NULL) +
   scale_fill_manual(values = group_colors, name = NULL) +
@@ -972,7 +1010,7 @@ plot_sliding_corr <- function(all_summary_df, group_colors) {
     geom_line(size = 1) +
     geom_point(size = 1.5, show.legend = FALSE) + # hide point legend
     geom_vline(aes(xintercept = transmission_peak_frac), linetype = "dashed", color = "black") +
-    annotate("text", x = 0.27, y = 0.95, label = "Peak transmission", hjust = 0, size = 3) +
+    annotate("text", x = 0.27, y = 0.85, label = "Peak transmission", hjust = 0, size = 3) +
     facet_wrap(~ group, scales = "free_y", ncol = 1) +
     scale_color_manual(values = group_colors, name = "group") +
     scale_fill_manual(values = group_colors, name = "group") +
@@ -987,17 +1025,74 @@ plot_sliding_corr <- function(all_summary_df, group_colors) {
   return(p)
 }
 
-p_corr <- plot_sliding_corr(all_summary_df, group_colors)
-p_corr  <- p_corr + custom_themeb
+
+plot_sliding_corrb <- function(all_summary_df, group_colors) {
+  
+  peak_labels <- data.frame(
+    group = c("Group 1 (low activity)",
+              "Group 2 (medium activity)",
+              "Group 3 (high activity)"),
+    x = c(0.27, 0.27, 0.27),
+    y = c(0.80, 0.70, 0.90),
+    label = "Peak transmission"
+  )
+  
+  p <- ggplot(all_summary_df,
+              aes(x = frac_time,
+                  y = median,
+                  color = group,
+                  fill = group)) +
+    
+    geom_ribbon(aes(ymin = lower, ymax = upper),
+                alpha = 0.2,
+                color = NA) +
+    
+    geom_line(size = 1) +
+    geom_point(size = 1.5, show.legend = FALSE) +
+    
+    geom_vline(aes(xintercept = transmission_peak_frac),
+               linetype = "dashed",
+               color = "black") +
+    
+    geom_text(data = peak_labels,
+              aes(x = x, y = y, label = label),
+              inherit.aes = FALSE,
+              size = 3) +
+    
+    facet_wrap(~ group, scales = "free_y", ncol = 1) +
+    
+    scale_color_manual(values = group_colors, name = "Group") +
+    scale_fill_manual(values = group_colors, name = "Group") +
+    
+    scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+    
+    labs(
+      x = "Fraction of time series used",
+      y = "Pearson correlation (viral load vs. cases)"
+    ) +
+    
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "bottom")
+  
+  return(p)
+}
+if (extra_available) {
+  p_corr <- plot_sliding_corrb(all_summary_df, group_colors)
+  p_corr  <- p_corr + custom_themeb
+}
 
 # Combine with  other two plots:
-top_row <- plot_shed + p_corr + plot_layout(widths = c(1, 1))
+if (extra_available) {
+  top_row <- plot_shed + p_corr + plot_layout(widths = c(1, 1))
+} else {
+  top_row <- plot_shed
+}
 mainfigure3 <- top_row / plot_epi +
   plot_annotation(tag_levels = "A")  
 mainfigure3
 
 ggsave(
-  filename = "outputs/figures/mainfigure3.pdf",
+  filename = "outputs/figures/refit_mainfigure3.pdf",
   plot = mainfigure3,
   width = 14,       
   height = 11,      
@@ -1006,7 +1101,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "outputs/figures/mainfigure3.tiff",
+  filename = "outputs/figures/refit_mainfigure3.tiff",
   plot = mainfigure3,  # use your actual plot variable here
   width = 14,
   height = 11,
@@ -1017,9 +1112,9 @@ ggsave(
 )
 
 #Marginal posterior plots#
-case_mod  <- Combined_castestfnovurb
-ww_mod   <- Combined_WWtestfnovurb
-com_mod <- Combined_finaltestfbnovurbb
+case_mod  <- mcmc_matrixallcas
+ww_mod   <- mcmc_matrixallWW
+com_mod <- mcmc_matrixallcom
 
 ###Define parameter to model mapping
 param_model_map <- list(
@@ -1055,7 +1150,7 @@ param_labels <- c(
   transit_time_mean = "Mean transit time (days)",
   transit_time_cv = "Sd of transit time",
   mult = "Scaling factor for viral load",
-  tau_ww = "Precision of WW likelihood (τ)"
+  tau_ww = "Precision of WW likelihood"
 )
 
 #Set prior definitions
@@ -1072,7 +1167,7 @@ prior_definitions <- list(
   Veb=function(n) rbeta(n, shape1 = 69.3, shape2 = 35.6),
   transit_time_mean = function(n) rtruncnorm(n, a = 0.1, b = 10,mean = 2.5, sd = sqrt(1 / 0.25)),
   transit_time_cv = function(n) rtruncnorm(n, a = 0.1, b = 1, mean = 0.3, sd = sqrt(1 / 3)),
-  mult = function(n) exp(rtruncnorm(n, a = log(1e-9), b = log(1e-8), mean = log(3e-9), sd = sqrt(1 / 2.5))),
+  mult = function(n) exp(rtruncnorm(n, a = log(1e-8), b = log(1e0), mean = log(1.5e-4), sd = sqrt(1 / 0.05))),
   tau_ww = function(n) rgamma(n, shape = 40, rate = 48)
 )
 
@@ -1112,11 +1207,59 @@ beta_df_all <- bind_rows(all_param_dfs)
 beta_df_all$source <- factor(beta_df_all$source, levels = c("Combined","Viral load-only","Case-only","Prior"))
 beta_df_all$parameter_label <- param_labels[beta_df_all$parameter]
 
-WW_params <- c("mult", "transit_time_mean","transit_time_cv","tau_ww")
+beta_df_allb <- beta_df_all %>%
+  mutate(
+    value_plot = case_when(
+      parameter == "mult" ~ log10(value),
+      TRUE ~ value
+    ),
+    
+    parameter_label = case_when(
+      parameter == "mult" ~ "log10(ψ)",
+      TRUE ~ parameter_label
+    ),
+    source=case_when(
+      source == "Viral load-only" ~ "Wastewater-only",
+      TRUE ~ source
+    ),
+  )
+WW_params <- c("mult", "transit_time_mean","tau_ww")
 
+beta_df_allb$source <- factor(beta_df_allb$source, levels = c("Combined","Wastewater-only","Case-only","Prior"))
 
 #plot a,d and c will be based on these fits#
-plota=ggplot(beta_df_all %>% filter(parameter %in% WW_params), 
+plota=ggplot(beta_df_allb %>% filter(parameter %in% WW_params), 
+             aes(x = value_plot, y = source, fill = source)) +
+  geom_density_ridges(alpha = 0.7, 
+                      quantile_lines = TRUE, 
+                      quantiles = 0.5,
+                      scale = 0.9,
+                      rel_min_height = 0.0005) +
+ facet_wrap(
+  ~ parameter_label,
+  scales = "free_x",
+  ncol = 3,
+  labeller = labeller(
+    parameter_label = c(
+      "log[10] (ψ)" = expression(log[10](psi))
+    )
+  )
+)+
+  scale_fill_manual(values = c("gray30", "gray60", "gray70", "gray90")) +
+  theme_minimal(base_size = 16) +
+  ylab("Source")+
+  xlab("Parameter value")+
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.text.y = element_text(size = 12),
+    axis.text.x = element_text(size = 12)
+  )
+plota
+
+case_params <- c("beta", "kappa","report_frac")
+
+plotbb=ggplot(beta_df_allb %>% filter(parameter %in% case_params), 
              aes(x = value, y = source, fill = source)) +
   geom_density_ridges(alpha = 0.7, 
                       quantile_lines = TRUE, 
@@ -1132,7 +1275,8 @@ plota=ggplot(beta_df_all %>% filter(parameter %in% WW_params),
     axis.text.y = element_text(size = 12),
     axis.text.x = element_text(size = 12)
   )
-plota
+plotbb
+
 
 Inf_params <- c("delta_inv", "theta_invall","omega_invall")
 plotc=ggplot(beta_df_all %>% filter(parameter %in% Inf_params), 
@@ -1175,9 +1319,9 @@ plotd
 
 
 #########plot b will be based on fits_fig2#########
-case_mod  <- Combined_casd
-ww_mod   <- Combined_WWd
-com_mod <- Comblist_finalg
+case_mod  <- mcmc_matrixallcasfig2
+ww_mod   <- mcmc_matrixallWWfig2
+com_mod <- mcmc_matrixallcomfig2
 
 ###Define parameter to model mapping
 param_model_map <- list(
@@ -1231,7 +1375,7 @@ prior_definitions <- list(
   Veb=function(n) rbeta(n, shape1 = 69.3, shape2 = 35.6),
   transit_time_mean = function(n) rtruncnorm(n, a = 0.1, b = 10,mean = 2.5, sd = sqrt(1 / 0.25)),
   transit_time_cv = function(n) rtruncnorm(n, a = 0.1, b = 1, mean = 0.3, sd = sqrt(1 / 3)),
-  mult = function(n) exp(rtruncnorm(n, a = log(1e-9), b = log(1e-8), mean = log(3e-9), sd = sqrt(1 / 2.5))),
+  mult = function(n) exp(rtruncnorm(n, a = log(1e-8), b = log(1e0), mean = log(1.5e-4), sd = sqrt(1 / 0.05))),
   tau_ww = function(n) rgamma(n, shape = 40, rate = 48)
 )
 
@@ -1271,9 +1415,20 @@ beta_df_all <- bind_rows(all_param_dfs)
 beta_df_all$source <- factor(beta_df_all$source, levels = c("Combined","Viral load-only","Case-only","Prior"))
 beta_df_all$parameter_label <- param_labels[beta_df_all$parameter]
 
-case_params <- c("beta", "kappa","report_frac","phi")
 
-plotb=ggplot(beta_df_all %>% filter(parameter %in% case_params), 
+beta_df_allc <- beta_df_all %>%
+  mutate(
+    source=case_when(
+      source == "Viral load-only" ~ "Wastewater-only",
+      TRUE ~ source
+    ),
+  )
+
+beta_df_allc$source <- factor(beta_df_allc$source, levels = c("Combined","Wastewater-only","Case-only","Prior"))
+
+case_params <- c("beta", "kappa","report_frac")
+
+plotb=ggplot(beta_df_allc %>% filter(parameter %in% case_params), 
              aes(x = value, y = source, fill = source)) +
   geom_density_ridges(alpha = 0.7, 
                       quantile_lines = TRUE, 
@@ -1282,7 +1437,9 @@ plotb=ggplot(beta_df_all %>% filter(parameter %in% case_params),
                       rel_min_height = 0.0005) +
   facet_wrap(~ parameter_label, scales = "free_x", ncol = 4) +
   scale_fill_manual(values = c("gray30", "gray60", "gray70", "gray90")) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 16) +
+  ylab("Source")+
+  xlab("Parameter value")+
   theme(
     legend.position = "none",
     plot.title = element_text(hjust = 0.5, size = 16),
@@ -1297,7 +1454,7 @@ row1 <- ggpubr::ggarrange(
   labels = "B")
 
 row1 <- annotate_figure(row1,
-                        top = text_grob("Wastewater  parameters", face = "bold", size = 14)
+                        top = text_grob("Wastewater parameters", face = "bold", size = 14)
 )
 
 row1
@@ -1351,20 +1508,20 @@ finals3
 
 
 ggsave(
-  filename = "outputs/figures/revSuppfigures2.pdf",
+  filename = "outputs/figures/refit_revSuppfigures2.pdf",
   plot = finals2,
-  width = 23,
-  height = 16,
+  width = 12,
+  height = 10,
   units = "in",
   device = cairo_pdf
 )
 
 
 ggsave(
-  filename = "outputs/figures/revSuppfigures2.tiff",
+  filename = "outputs/figures/refit_revSuppfigures2.tiff",
   plot = finals2,  
-  width = 23,
-  height = 16,
+  width = 12,
+  height = 10,
   dpi = 300,
   units = "in",
   device = "tiff",
@@ -1373,7 +1530,7 @@ ggsave(
 
 
 ggsave(
-  filename = "outputs/figures/Suppfigures3.tiff",
+  filename = "outputs/figures/refit_Suppfigures3.tiff",
   plot = finals3,  
   width = 16,
   height = 13,
@@ -1384,7 +1541,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "outputs/figures/Suppfigures3.pdf",
+  filename = "outputs/figures/refit_Suppfigures3.pdf",
   plot = finals3,
   width = 16,
   height = 13,
@@ -1393,60 +1550,51 @@ ggsave(
 )
 
 #ESS estimates#
-case_mod  <- Combined_castestfnovurb
-ww_mod   <- Combined_WWtestfnovurb
-com_mod <- Combined_finaltestfbnovurbb
-
-#Automated code#
+# Refit version: the refitted draws are thinned to every 20th sample, so R-hat
+# and ESS are not recomputed from them. They were computed on the full chains
+# during extraction and are read from the scalar summaries instead.
 params_to_plot <- c(
   "log_mult","transit_time_mean","transit_time_cv","tau_ww",
   "beta","kappa","report_frac","phi",
   "delta_inv","theta_invall","omega_invall","Vea","Veb","m"
 )
 
-# summarize one model
-summarize_model <- function(mod, params, model_name) {
-  # Keep only parameters that actually exist in this model
-  have <- intersect(params, varnames(mod))
-  if (length(have) == 0) {
-    return(tibble(Model = character(), Parameter = character(),
-                  Rhat = numeric(), ESS = numeric(),
-                  Converged = logical()))
-  }
-  # Subset MCMC object to those parameters
-  mod_sub <- mod[, have]
-  
-  # R-hat & ESS
-  gd  <- gelman.diag(mod_sub, multivariate = FALSE)
-  ess <- effectiveSize(mod_sub)
-  
-  tibble(
-    Model     = model_name,
-    Parameter = rownames(gd$psrf),
-    Rhat      = round(gd$psrf[, 1], 3),
-    ESS       = round(as.numeric(ess[rownames(gd$psrf)]), 0),
-    Converged = (Rhat < 1.01) & (ESS > 200)
-  )
-}
+scalar_cas <- as.data.frame(read_excel(file.path("outputs", "summaries", "refitted_case_scalar_summary.xlsx")))
+scalar_ww  <- as.data.frame(read_excel(file.path("outputs", "summaries", "refitted_ww_scalar_summary.xlsx")))
+scalar_com <- as.data.frame(read_excel(file.path("outputs", "summaries", "refitted_combined_scalar_summary.xlsx")))
 
-# Run for all models and bind rows
-models <- list(`Case-only` = case_mod, `WW-only` = ww_mod, `Combined` = com_mod)
-
-all_summaries <- imap_dfr(models, ~ summarize_model(.x, params_to_plot, .y)) %>%
-  mutate(Parameter = factor(Parameter, levels = params_to_plot)) %>%
-  arrange(Parameter, match(Model, names(models)))
+# Check the Excel files have come through intact before using them
+cat("\n--- combined model, psi rows from the scalar summary ---\n")
+print(scalar_com[scalar_com$parameter %in% c("log_mult", "mult"), ], row.names = FALSE)
+cat("\n--- combined model, Rhat column from the scalar summary ---\n")
+print(scalar_com[, c("parameter", "Rhat")], row.names = FALSE)
 
 # wide table (parameters as rows, models as columns)
-wide_rhat <- all_summaries %>%
-  select(Parameter, Model, Rhat) %>%
-  pivot_wider(names_from = Model, values_from = Rhat)
+wide_rhat <- data.frame(
+  Parameter   = params_to_plot,
+  `Case-only` = scalar_cas$Rhat[match(params_to_plot, scalar_cas$parameter)],
+  `WW-only`   = scalar_ww$Rhat[match(params_to_plot, scalar_ww$parameter)],
+  Combined    = scalar_com$Rhat[match(params_to_plot, scalar_com$parameter)],
+  check.names = FALSE
+)
 
-wide_ess <- all_summaries %>%
-  select(Parameter, Model, ESS) %>%
-  pivot_wider(names_from = Model, values_from = ESS)
+wide_ess <- data.frame(
+  Parameter   = params_to_plot,
+  `Case-only` = scalar_cas$ESS[match(params_to_plot, scalar_cas$parameter)],
+  `WW-only`   = scalar_ww$ESS[match(params_to_plot, scalar_ww$parameter)],
+  Combined    = scalar_com$ESS[match(params_to_plot, scalar_com$parameter)],
+  check.names = FALSE
+)
+
+cat("\n--- R-hat and ESS, all three refitted models ---\n")
+print(wide_rhat, row.names = FALSE)
+print(wide_ess, row.names = FALSE)
+cat(sprintf("maximum R-hat: %.4f   minimum ESS: %.0f\n",
+            max(as.matrix(wide_rhat[, -1]), na.rm = TRUE),
+            min(as.matrix(wide_ess[, -1]), na.rm = TRUE)))
 
 #  write to CSV
-write.csv(wide_ess, "outputs/tables/wide_ess.csv", row.names = FALSE)
+write.csv(wide_ess, "outputs/tables/refit_wide_ess.csv", row.names = FALSE)
 
 
 # ==================================================
@@ -1454,9 +1602,9 @@ write.csv(wide_ess, "outputs/tables/wide_ess.csv", row.names = FALSE)
 # ==================================================
 
 # Convert fitted objects to matrices
-mcmc_matrixallcom <- as.matrix(Combined_finaltestfbnovurbb)
-mcmc_matrixallcas <- as.matrix(Combined_castestfnovurb)
-mcmc_matrixallww  <- as.matrix(Combined_WWtestfnovurb)
+# Refit version: mcmc_matrixallcom and mcmc_matrixallcas already hold the refitted
+# draws from the top of the script.
+mcmc_matrixallww  <- mcmc_matrixallWW
 
 post <- mcmc_matrixallcom   # Posterior samples (burn-in refers to time, not iterations)
 
@@ -1476,7 +1624,7 @@ sympt_mat_clean <- sympt_mat[, -c(1:30)]
 total_sympt <- rowSums(sympt_mat_clean, na.rm = TRUE)
 
 # Load observed case data
-case_dat      <- read_excel("Data/case_data_V2.xlsx", sheet = "cases")
+case_dat      <- read_excel(file.path("data", "raw", "case_data_V2.xlsx"), sheet = "cases")
 cases_obsb    <- case_dat$total_cases
 cum_reported_cases <- sum(cases_obsb)
 

@@ -13,10 +13,20 @@ library(tidyverse)
 library(coda)
 library(readxl)
 library(patchwork)
+library(ggpubr)
 
+# Refit version: read the refitted combined draws instead of the published fit
+mcmc_matrixallcom <- readRDS(file.path("outputs", "summaries", "refitted_combined_key_draws.rds"))
+
+transit <- as.matrix(mcmc_matrixallcom)[, "transit_time_mean"]
+
+quantile(
+  transit,
+  probs = c(0.025, 0.25, 0.5, 0.75, 0.975)
+)
 
 # ---- Transit time posterior summary ----
-# min = 0.4, median = 3.22, mode (~Q3) = 4.69, upper = 7.26
+# Refit version: baseline and scenarios are computed from this posterior below
 
 
 # ---- Population structure and contact rates ----
@@ -80,19 +90,30 @@ obs_days <- ww_dat$Day + burn_in_timesteps
 
 
 # ---- Transit time scenarios ----
-# posterior-anchored scenarios
+# Posterior-anchored scenarios based on combined-model posterior
 
 transit_times <- c(
-  fast     = 1.96,   # lower scenario
-  moderate = 4.89,   # upper-middle scenario
-  slow     = 7.35    # upper scenario
+  fast     = unname(quantile(transit, 0.25)),    # 25th percentile
+  moderate = unname(quantile(transit, 0.75)),    # 75th percentile
+  slow     = unname(quantile(transit, 0.975))    # 97.5th percentile
 )
 
-# posterior median
-baseline_transit <- 3.54
+# Posterior median
+baseline_transit <- unname(quantile(transit, 0.5))
 
 # multiplicative factors relative to baseline
 transit_factors <- transit_times / baseline_transit
+
+# scenario names as built in the results loops below ("Longer transit: +X%")
+transit_name_fast     <- paste0("Longer transit: ", ifelse(round((transit_factors["fast"] - 1) * 100) >= 0, "+", ""), round((transit_factors["fast"] - 1) * 100), "%")
+transit_name_moderate <- paste0("Longer transit: ", ifelse(round((transit_factors["moderate"] - 1) * 100) >= 0, "+", ""), round((transit_factors["moderate"] - 1) * 100), "%")
+transit_name_slow     <- paste0("Longer transit: ", ifelse(round((transit_factors["slow"] - 1) * 100) >= 0, "+", ""), round((transit_factors["slow"] - 1) * 100), "%")
+
+# plot labels built from the computed values
+transit_label_baseline <- paste0("Baseline (", sprintf("%.1f", baseline_transit), " days)")
+transit_label_fast     <- paste0("Fast transit (", sprintf("%.1f", transit_times["fast"]), " days)")
+transit_label_moderate <- paste0("Moderate transit (", sprintf("%.1f", transit_times["moderate"]), " days)")
+transit_label_slow     <- paste0("Slow transit (", sprintf("%.1f", transit_times["slow"]), " days)")
 
 
 # ---- Scenario wrapper ----
@@ -235,37 +256,37 @@ extract_params <- function(draw_row) {
     omegavb = 1 / (draw_row["omega_invall"] / 3),
     
     # wastewater and shedding parameters
-    mu = 0.18,
+    mu = 0.143,
     tau = 0.776,
     
-    shed_I1 = 10^12.3,
-    shed_I2 = 10^11.5,
-    shed_I3 = 10^10.2,
+    shed_I1 = 10^7.303,
+    shed_I2 = 10^6.583,
+    shed_I3 = 10^3.785,
     
-    shed_A1 = 10^12.3 * 0.776,
-    shed_A2 = 10^11.5 * 0.776,
-    shed_A3 = 10^10.2 * 0.776,
+    shed_A1 = 10^7.303 * 0.776,
+    shed_A2 = 10^6.583 * 0.776,
+    shed_A3 = 10^3.785 * 0.776,
     
-    shed_alpha = 10^12.3 * 0.776,
+    shed_alpha = 10^7.303 * 0.776,
     
-    shed_P1a = 10^12.3 * 0.776,
-    shed_P1b = 10^12.3 * 0.776,
+    shed_P1a = 10^7.303 * 0.776,
+    shed_P1b = 10^7.303 * 0.776,
     
-    shed_A1a = 10^12.3 * 0.776,
-    shed_A2a = 10^11.5 * 0.776,
-    shed_A3a = 10^10.2 * 0.776,
+    shed_A1a = 10^7.303 * 0.776,
+    shed_A2a = 10^6.583 * 0.776,
+    shed_A3a = 10^3.785 * 0.776,
     
-    shed_A1b = 10^12.3 * 0.776,
-    shed_A2b = 10^11.5 * 0.776,
-    shed_A3b = 10^10.2 * 0.776,
+    shed_A1b = 10^7.303 * 0.776,
+    shed_A2b = 10^6.583 * 0.776,
+    shed_A3b = 10^3.785 * 0.776,
     
-    shed_I1a = 10^12.3,
-    shed_I2a = 10^11.5,
-    shed_I3a = 10^10.2,
+    shed_I1a = 10^7.303,
+    shed_I2a = 10^6.583,
+    shed_I3a = 10^3.785,
     
-    shed_I1b = 10^12.3,
-    shed_I2b = 10^11.5,
-    shed_I3b = 10^10.2,
+    shed_I1b = 10^7.303,
+    shed_I2b = 10^6.583,
+    shed_I3b = 10^3.785,
     
     # transport and observation
     transit_mean = draw_row["transit_time_mean"],
@@ -285,8 +306,8 @@ extract_params <- function(draw_row) {
 
 # ---- Load fitted model output ----
 # Use posterior samples from the combined model fit
-load(file.path("outputs", "fits", "combined_fit.RData"))
-mcmc_matrixallcom <- as.matrix(do.call(rbind, Combined_finaltestfbnovurbb))
+# Refit version: read the refitted combined draws instead of the published fit
+mcmc_matrixallcom <- readRDS(file.path("outputs", "summaries", "refitted_combined_key_draws.rds"))
 # select one posterior draw for simulation
 one_draw <- mcmc_matrixallcom[1000, ]
 params <- extract_params(one_draw)
@@ -1744,17 +1765,17 @@ vload_df_tr <- vload_df_tr %>%
   mutate(
     scenario = factor(
       case_when(
-        scenario == "Baseline"              ~ "Baseline(3.5 days)",
-        scenario == "Longer transit: -45%"  ~ "Fast transit (1.9 days)",
-        scenario == "Longer transit: +38%"  ~ "Moderate transit (4.8 days)",
-        scenario == "Longer transit: +108%" ~ "Slow transit (7.3 days)",
+        scenario == "Baseline"              ~ transit_label_baseline,
+        scenario == transit_name_fast ~ transit_label_fast,
+        scenario == transit_name_moderate ~ transit_label_moderate,
+        scenario == transit_name_slow ~ transit_label_slow,
         TRUE ~ scenario
       ),
       levels = c(
-        "Baseline(3.5 days)",
-        "Fast transit (1.9 days)",
-        "Moderate transit (4.8 days)",
-        "Slow transit (7.3 days)"
+        transit_label_baseline,
+        transit_label_fast,
+        transit_label_moderate,
+        transit_label_slow
       )
     )
   )
@@ -1763,7 +1784,7 @@ p_vload_tr <- plot_sim_outputc(
   vload_df_tr,
   ylab = "WW viral load",
   log_y = TRUE,
-  ribbon_exclude = "Fast transit (1.9 days)"
+  ribbon_exclude = transit_label_fast
 ) + guides(fill = "none")+
   theme_no_legend
 
@@ -1772,17 +1793,17 @@ peaks_tr <- peaks_tr %>%
   mutate(
     scenario = factor(
       case_when(
-        scenario == "Baseline"              ~ "Baseline(3.5 days)",
-        scenario == "Longer transit: -45%"   ~ "Fast transit (1.9 days)",
-        scenario == "Longer transit: +38%"   ~ "Moderate transit (4.8 days)",
-        scenario == "Longer transit: +108%" ~ "Slow transit (7.3 days)",
+        scenario == "Baseline"              ~ transit_label_baseline,
+        scenario == transit_name_fast ~ transit_label_fast,
+        scenario == transit_name_moderate ~ transit_label_moderate,
+        scenario == transit_name_slow ~ transit_label_slow,
         TRUE ~ scenario
       ),
       levels = c(
-        "Baseline(3.5 days)",
-        "Fast transit (1.9 days)",
-        "Moderate transit (4.8 days)",
-        "Slow transit (7.3 days)"
+        transit_label_baseline,
+        transit_label_fast,
+        transit_label_moderate,
+        transit_label_slow
       )
     )
   )
@@ -1805,23 +1826,23 @@ corr_df_tr <- corr_df_tr %>%
   mutate(
     scenario = factor(
       case_when(
-        scenario == "Baseline"              ~ "Baseline(3.5 days)",
-        scenario == "Longer transit: -45%"   ~ "Fast transit (1.9 days)",
-        scenario == "Longer transit: +38%"   ~ "Moderate transit (4.8 days)",
-        scenario == "Longer transit: +108%" ~ "Slow transit (7.3 days)",
+        scenario == "Baseline"              ~ transit_label_baseline,
+        scenario == transit_name_fast ~ transit_label_fast,
+        scenario == transit_name_moderate ~ transit_label_moderate,
+        scenario == transit_name_slow ~ transit_label_slow,
         TRUE ~ scenario
       ),
       levels = c(
-        "Baseline(3.5 days)",
-        "Fast transit (1.9 days)",
-        "Moderate transit (4.8 days)",
-        "Slow transit (7.3 days)"
+        transit_label_baseline,
+        transit_label_fast,
+        transit_label_moderate,
+        transit_label_slow
       )
     )
   )
 
 # scenarios for which we want NO credible intervals
-no_ribbon_scenarios <- c("Fast transit (1.9 days)")
+no_ribbon_scenarios <- c(transit_label_fast)
 
 ribbon_corr_df <- corr_df_tr %>%
   dplyr::filter(!scenario %in% no_ribbon_scenarios)
@@ -1941,14 +1962,14 @@ cases_df_rd <- cases_df_rd %>%
   mutate(
     scenario = factor(
       case_when(
-        scenario == "Baseline"              ~ "Baseline(7 days)",
+        scenario == "Baseline"              ~ "Baseline (7 days)",
         scenario == "Reporting delay: 5 days"   ~ "Fast reporting (5 days)",
         scenario == "Reporting delay: 10 days"  ~ "Slow reporting (10 days)",
         scenario == "Reporting delay: 14 days" ~ "Very slow reporting (14 days)",
         TRUE ~ scenario
       ),
       levels = c(
-        "Baseline(7 days)",
+        "Baseline (7 days)",
         "Fast reporting (5 days)",
         "Slow reporting (10 days)",
         "Very slow reporting (14 days)"
@@ -1964,14 +1985,14 @@ corr_df_rd <- corr_df_rd %>%
   mutate(
     scenario = factor(
       case_when(
-        scenario == "Baseline"              ~ "Baseline(7 days)",
+        scenario == "Baseline"              ~ "Baseline (7 days)",
         scenario == "Reporting delay: 5 days"   ~ "Fast reporting (5 days)",
         scenario == "Reporting delay: 10 days"  ~ "Slow reporting (10 days)",
         scenario == "Reporting delay: 14 days" ~ "Very slow reporting (14 days)",
         TRUE ~ scenario
       ),
       levels = c(
-        "Baseline(7 days)",
+        "Baseline (7 days)",
         "Fast reporting (5 days)",
         "Slow reporting (10 days)",
         "Very slow reporting (14 days)"
@@ -2005,14 +2026,14 @@ peaks_rd <- peaks_rd %>%
   mutate(
     scenario = factor(
       case_when(
-        scenario == "Baseline"              ~ "Baseline(7 days)",
+        scenario == "Baseline"              ~ "Baseline (7 days)",
         scenario == "Reporting delay: 5 days"   ~ "Fast reporting (5 days)",
         scenario == "Reporting delay: 10 days"  ~ "Slow reporting (10 days)",
         scenario == "Reporting delay: 14 days" ~ "Very slow reporting (14 days)",
         TRUE ~ scenario
       ),
       levels = c(
-        "Baseline(7 days)",
+        "Baseline (7 days)",
         "Fast reporting (5 days)",
         "Slow reporting (10 days)",
         "Very slow reporting (14 days)"
@@ -2077,7 +2098,7 @@ final <- ggarrange(
 
 #Save
 ggsave(
-  filename = "outputs/figures/mainfigure4.pdf",
+  filename = "outputs/figures/refit_mainfigure4.pdf",
   plot = final,
   width = 20,
   height = 20,
@@ -2086,7 +2107,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "outputs/figures/mainfigure4.tiff",
+  filename = "outputs/figures/refit_mainfigure4.tiff",
   plot = final,  # use your actual plot variable here
   width = 20,
   height = 20,
@@ -2097,6 +2118,17 @@ ggsave(
 )
 
 
+#Row 4: Reporting Delay
+row3b <- ggarrange(
+  p_casesrd,Timetopeakrd,
+  ncol = 2, common.legend = TRUE, legend = "bottom",
+  #labels = c("G", "H"),
+  label.x = c(0, -0.05),
+  label.y = 1.02
+)
+row3b <- annotate_figure(row3b,
+                        top = text_grob("Reporting Delay Scenarios", face = "bold", size = 14)
+)
 
 
 

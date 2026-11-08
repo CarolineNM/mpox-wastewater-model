@@ -1,0 +1,6 @@
+site,bin,q1,median,q3,censored
+lesion,1-7,6.474,7.301,8.164,False
+lesion,8-14,5.252,6.528,7.517,False
+lesion,15-21,2.915,3.724,5.378,False
+rectum,1-7,2.901,4.937,7.514,False
+rectum,8-14,3.928,5.658,6.523,False
